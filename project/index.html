@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deepfake Detection</title>
+</head>
+<body>
+    <h2>Upload an Image to Detect Deepfake</h2>
+
+    <input type="file" id="imageUpload" accept="image/*">
+    <button onclick="makePrediction()">Check Image</button>
+
+    <h3>Result: <span id="result"></span></h3>
+    <h4>Confidence: <span id="confidence"></span></h4>
+    <img id="previewImage" style="max-width: 300px; display: none;">
+
+    <script>
+        async function makePrediction() {
+            let fileInput = document.getElementById("imageUpload");
+            let file = fileInput.files[0];
+
+            if (!file) {
+                alert("Please upload an image first.");
+                return;
+            }
+
+            let formData = new FormData();
+            formData.append("file", file);
+
+            // Show preview of uploaded image
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                let img = document.getElementById("previewImage");
+                img.src = e.target.result;
+                img.style.display = "block";
+            };
+            reader.readAsDataURL(file);
+
+            try {
+                let response = await fetch("/predict", {
+                    method: "POST",
+                    body: formData
+                });
+
+                let data = await response.json();
+
+                if (data.error) {
+                    document.getElementById("result").innerText = "Error: " + data.error;
+                } else {
+                    document.getElementById("result").innerText = data.prediction;
+                    document.getElementById("confidence").innerText = (data.confidence * 100).toFixed(2) + "%";
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                document.getElementById("result").innerText = "Error making prediction.";
+            }
+        }
+    </script>
+</body>
+</html>
